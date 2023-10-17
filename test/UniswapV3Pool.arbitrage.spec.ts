@@ -76,6 +76,7 @@ describe('UniswapV3Pool arbitrage tests', () => {
         describe(`passive liquidity of ${formatTokenAmount(passiveLiquidity)}`, () => {
           const arbTestFixture = async ([wallet, arbitrageur]: Wallet[]) => {
             const fix = await poolFixture([wallet], waffle.provider)
+            const factory = fix.factory
 
             const pool = await fix.createPool(feeAmount, tickSpacing)
 
@@ -97,6 +98,8 @@ describe('UniswapV3Pool arbitrage tests', () => {
 
             const testerFactory = await ethers.getContractFactory('UniswapV3PoolSwapTest')
             const tester = (await testerFactory.deploy()) as UniswapV3PoolSwapTest
+            // whitelist tester contract in factory
+            factory.setRouter(tester.address, true)
 
             const tickMathFactory = await ethers.getContractFactory('TickMathTest')
             const tickMath = (await tickMathFactory.deploy()) as TickMathTest

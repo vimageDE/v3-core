@@ -19,8 +19,15 @@ contract UniswapV3Factory is IUniswapV3Factory, UniswapV3PoolDeployer, NoDelegat
     /// @inheritdoc IUniswapV3Factory
     mapping(address => mapping(address => mapping(uint24 => address))) public override getPool;
 
+    /// @dev array of whitelisted routers
+    mapping(address => bool) public override routers;
+
+    /// @notice emitted when a router was enable or deleted
+    event RouterSet(address routerAddress, bool enabled);
+
     constructor() {
         owner = msg.sender;
+        _setRouter(msg.sender, true);
         emit OwnerChanged(address(0), msg.sender);
 
         feeAmountTickSpacing[500] = 10;
@@ -29,6 +36,22 @@ contract UniswapV3Factory is IUniswapV3Factory, UniswapV3PoolDeployer, NoDelegat
         emit FeeAmountEnabled(3000, 60);
         feeAmountTickSpacing[10000] = 200;
         emit FeeAmountEnabled(10000, 200);
+    }
+
+    /// @notice Addresses to interact with functions subject to h1fees can be allowed or disabled here.
+    /// @dev Whitelist SwapRouter, as well as Quoters contracts for swapping
+    /// @dev Whitelist NonfungiblePositionManager contract for burning and miniting
+    /// @dev Whitelist PairFlash contract for flashing
+    /// @dev Optionally whitelist V3Migrator for migration of from V2 to V3
+    /// @dev SwapRouter and NonfungiblePositionManager MUST be whitelisted for basic functionallity
+    function setRouter(address _router, bool allow) external {
+        require(msg.sender == owner, 'Not Owner');
+        _setRouter(_router, allow);
+    }
+
+    function _setRouter(address _router, bool allow) internal {
+        routers[_router] = allow;
+        RouterSet(_router, allow);
     }
 
     /// @inheritdoc IUniswapV3Factory

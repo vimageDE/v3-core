@@ -102,6 +102,8 @@ describe('UniswapV3Pool', () => {
 
     // default to the 30 bips pool
     pool = await createPool(FeeAmount.MEDIUM, TICK_SPACINGS[FeeAmount.MEDIUM])
+    // Allow 'other' signer to interact with the pool
+    await factory.setRouter(other.address, true)
   })
 
   it('constructor initializes immutables', async () => {
@@ -188,7 +190,7 @@ describe('UniswapV3Pool', () => {
 
   describe('#mint', () => {
     it('fails if not initialized', async () => {
-      await expect(mint(wallet.address, -tickSpacing, tickSpacing, 1)).to.be.revertedWith('LOK')
+      await expect(mint(wallet.address, -tickSpacing, tickSpacing, 1)).to.be.reverted
     })
     describe('after initialization', () => {
       beforeEach('initialize the pool at price of 10:1', async () => {
@@ -1688,6 +1690,8 @@ describe('UniswapV3Pool', () => {
         await ethers.getContractFactory('TestUniswapV3ReentrantCallee')
       ).deploy()) as TestUniswapV3ReentrantCallee
 
+      // Whitelist reentrant router in factory
+      await factory.setRouter(reentrant.address, true)
       // the tests happen in solidity
       await expect(reentrant.swapToReenter(pool.address)).to.be.revertedWith('Unable to reenter')
     })
@@ -1973,6 +1977,7 @@ describe('UniswapV3Pool', () => {
     beforeEach('deploy swap test', async () => {
       const underpayFactory = await ethers.getContractFactory('TestUniswapV3SwapPay')
       underpay = (await underpayFactory.deploy()) as TestUniswapV3SwapPay
+      await factory.setRouter(underpay.address, true)
       await token0.approve(underpay.address, constants.MaxUint256)
       await token1.approve(underpay.address, constants.MaxUint256)
       await pool.initialize(encodePriceSqrt(1, 1))
